@@ -116,7 +116,7 @@ adc_read:
 ; io setup
 
 io_setup:
-	; output on PB4 (sound) and PB1 (comms ready)
+	; output on PB4 (sound) and PB1 (SPI DO)
 	ldi	temp, _BV(DDB4) | _BV(DDB1) ;| _BV(DDB0)
 	out	IO(DDRB), temp
 	ret
@@ -125,11 +125,6 @@ io_setup:
 ; pwm setup (kinda important, since it generates the sound output!)
 
 pwm_setup:
-	; Turn on the PLL
-	in	temp, IO(PLLCSR)
-	ori	temp, _BV(PLLE) | _BV(PCKE)
-	out	IO(PLLCSR), temp
-
 	; Set compare unit values
 	ldi	temp, 128
 	out	IO(OCR1B), temp
@@ -137,17 +132,18 @@ pwm_setup:
 	out	IO(OCR1A), temp
 	out	IO(OCR1C), temp
 
-	; Enable OCRB output on PB4, configure compare mode and enable PWM B
-	ldi	temp, _BV(PWM1B) | _BV(COM1B1) | _BV(COM1B0)
+	; Enable PWM mode on timer 1
+	ldi	temp, _BV(PWM1B) | _BV(COM1B1) | _BV(COM1B1)
 	out	IO(GTCCR), temp
+
+	; Enable timer overflow interrupt
 	in	temp, IO(TIMSK)
 	ori	temp, _BV(TOIE1)
 	out	IO(TIMSK), temp
 
-	; Hardware bug requires COM1A0 to be enabled... but we're making lemonade
-	; from lemons, and using it as a "ready to accept commands" signal!
-	; 4 = PCK/8 (32KHz sample rate)
-	ldi	temp, _BV(PWM1A) | _BV(COM1A1) | _BV(COM1A0) | 4
+	; Hardware bug requires COM1A0 to be enabled as well.
+	; "2" means clodk timer with CK/2 (32KHz sample rate)
+	ldi	temp, _BV(PWM1A) | _BV(COM1A1) | _BV(COM1A0) | 2
 	out	IO(TCCR1), temp
 	ret
 
@@ -336,9 +332,8 @@ main:
 1:	lsr	sample_buf+1
 	ror	sample_buf
 
-	; invert sample and tell the ISR it's ready (4 | 234)
-0:	com	sample_buf
-	inc	sample_ready
+	; tell the ISR it's ready (4 | 234)
+0:	inc	sample_ready
 
 	;in	temp, IO(TCNT1)
 	;out	IO(OCR1A), temp
