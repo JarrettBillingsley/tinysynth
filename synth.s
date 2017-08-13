@@ -142,7 +142,7 @@ pwm_setup:
 	out	IO(TIMSK), temp
 
 	; Hardware bug requires COM1A0 to be enabled as well.
-	; "2" means clodk timer with CK/2 (32KHz sample rate)
+	; "2" means clock timer with CK/2 (32KHz sample rate)
 	ldi	temp, _BV(PWM1A) | _BV(COM1A1) | _BV(COM1A0) | 2
 	out	IO(TCCR1), temp
 	ret
@@ -172,7 +172,7 @@ main:
 	inc	noise_lfsr
 
 	; enable noise temporarily
-	ldi	temp, 2
+	ldi	temp, 8
 	mov	noise_vol, temp
 
 	; setup pointers
@@ -184,35 +184,18 @@ main:
 	sei
 
 .main_loop:
+#if 0
+	; testing code
 	rcall	adc_read
 	swap	temp
 	andi	temp, 0xF
 	mov     noise_vol, temp
-#if 0
-	ldi	yl, RAM_START
-	adiw	yl, 3
-	;andi	temp, 0xF0
-	;swap	temp
-	bst	temp, 7
-	lsl	temp
-	st	y, temp
-	adiw	yl, 2
-	mov	temp, ZERO
-	brtc	0f
-	inc	temp
-0:	st	y, temp
-	;adiw	yl, SIZEOF_CHANNEL
-	;st	y, temp
-	;adiw	yl, SIZEOF_CHANNEL
-	;st	y, temp
-	;adiw	yl, SIZEOF_CHANNEL
-	;st	y, temp
 #endif
 
 0:	tst	sample_ready
 	brne	0b
 
-	; reset regs (4 cycles)
+	; reset regs (5 cycles)
 	ldi	yl, RAM_START
 	ldi	temp, NUM_CHANNELS
 	mov	I, temp
@@ -278,7 +261,7 @@ main:
 	dec	I
 	brne	.update_loop
 
-	; at this point, the loop has taken (51 x 4 - 1) = 203 cycles.
+	; at this point, the loop has taken (51 x 4 - 1 + 5) = 208 cycles.
 
 	; might seem silly to always update the noise channel, but we're optimizing for fastest
 	; worst-case cycle times, and the additional check for disabled adds a few cycles.
@@ -310,14 +293,14 @@ main:
 	bld	noise_lfsr+1, 6
 
 .noise_output:
-	; output noise sample (13 from above + 5 here = 18 | 221)
+	; output noise sample (13 from above + 5 here = 18 | 226)
 	mov	volume, sample
 	swap	volume
 	or	sample, volume
 	add	sample_buf, sample
 	adc	sample_buf+1, ZERO
 
-	; shift sample (cycles needed: 8 for 0, 9 for all others) (9 | 230)
+	; shift sample (cycles needed: 8 for 0, 9 for all others) (9 | 235)
 	cpi	mix_shift, 3
 	breq	3f
 	cpi	mix_shift, 2
@@ -332,7 +315,7 @@ main:
 1:	lsr	sample_buf+1
 	ror	sample_buf
 
-	; tell the ISR it's ready (4 | 234)
+	; tell the ISR it's ready (4 | 239)
 0:	inc	sample_ready
 
 	;in	temp, IO(TCNT1)

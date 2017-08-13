@@ -1,6 +1,3 @@
-; this code is based on the usi_i2c_slave.c driver written by Adam Honse:
-; https://github.com/CalcProgrammer1/Stepper-Motor-Controller/blob/master/UnipolarStepperDriver/usi_i2c_slave.c
-
 #include <avr/io.h>
 
 #include "tinysynth.inc"
@@ -39,6 +36,8 @@ spi_send:
 ;------------------------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------------------------
+; this code is based on the usi_i2c_slave.c driver written by Adam Honse:
+; https://github.com/CalcProgrammer1/Stepper-Motor-Controller/blob/master/UnipolarStepperDriver/usi_i2c_slave.c
 
 #if 0
 #define PORTB_SDA PB0

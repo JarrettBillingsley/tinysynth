@@ -1,3 +1,4 @@
+# generate volume lookup table.
 
 maxvol = [
 	0x00, 0x11, 0x22, 0x33,
