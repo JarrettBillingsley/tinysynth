@@ -54,8 +54,10 @@
 #define sreg_save    1
 #define sample_ready 2
 #define sample_buf   3
+; ^ 16-bit
 #define noise_vol    5
 #define noise_lfsr   6
+; ^ 16-bit
 #define noise_ctr    8
 #define noise_reload 9
 #define flags        10
@@ -79,7 +81,6 @@
 #define temp         16
 #define temp_ISR     17
 #define mix_shift    18
-#define i2c_state    19
 
 ; 19-25 unused
 

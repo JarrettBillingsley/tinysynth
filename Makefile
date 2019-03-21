@@ -1,10 +1,11 @@
-DEVICE     = attiny85           # See avr-help for all possible devices
-CLOCK      = 16500000           # 16.5Mhz
-OBJECTS    = synth.o cmd.o      # Add more objects for each .c file here
+DEVICE     = attiny85            # See avr-help for all possible devices
+CLOCK      = 16500000            # 16.5Mhz
+OBJECTS    = synth.o cmd.o sim.o # Add more objects for each .c file here
 
 UPLOAD = ./micronucleus --run
 COMPILE = avr-gcc -Wall -Werror -O -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 ASSEMBLE = avr-as --fatal-warnings -mmcu=$(DEVICE)
+SIMULATE = simavr
 
 all:    synth.hex
 
@@ -14,8 +15,14 @@ synth.o: synth.s tinysynth.inc
 cmd.o: cmd.s tinysynth.inc
 	$(COMPILE) -x assembler-with-cpp -c cmd.s -o cmd.o
 
-flash:  all
+sim.o: sim.c
+	$(COMPILE) -c sim.c -o sim.o
+
+flash: all
 	$(UPLOAD) synth.hex
+
+simulate: all
+	$(SIMULATE) synth.elf
 
 clean:
 	rm -f synth.hex synth.elf $(OBJECTS)

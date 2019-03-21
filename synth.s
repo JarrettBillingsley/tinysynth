@@ -16,6 +16,11 @@ channels:
 	.byte 0x01, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x0F, 0, 0, 0, 0, 0, 0
 	.byte 0x01, 0x00, 0x00, 0x20, 0x00, 0x01, 0x00, 0x1F, 0x00, 0x0F, 0, 0, 0, 0, 0, 0
 
+.global fug
+.type fug, @object
+.size fug, 1
+fug: .byte 0
+
 .org SAMPLE_RAM_START
 
 .type	sample_ram, @object
@@ -79,6 +84,8 @@ TIMER1_OVF_vect:
 	clr	sample_ready
 	out	IO(OCR1B), sample_buf
 
+	sts	fug, sample_buf
+
 .no_sample:
 	; reset the A comparator to say "no more commands!"
 	ldi	temp_ISR, 255
@@ -133,7 +140,7 @@ pwm_setup:
 	out	IO(OCR1C), temp
 
 	; Enable PWM mode on timer 1
-	ldi	temp, _BV(PWM1B) | _BV(COM1B1) | _BV(COM1B1)
+	ldi	temp, _BV(PWM1B) | _BV(COM1B1)
 	out	IO(GTCCR), temp
 
 	; Enable timer overflow interrupt
@@ -172,7 +179,7 @@ main:
 	inc	noise_lfsr
 
 	; enable noise temporarily
-	ldi	temp, 8
+	ldi	temp, 0
 	mov	noise_vol, temp
 
 	; setup pointers
@@ -321,8 +328,6 @@ main:
 	;in	temp, IO(TCNT1)
 	;out	IO(OCR1A), temp
 
-	ldi	temp, 0xA5
-	rcall	spi_send
 	rjmp	.main_loop
 
 ; ----------------------------------------------------------------------------
