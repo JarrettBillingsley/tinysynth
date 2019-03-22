@@ -11,9 +11,6 @@
 #define VOLUME_TABLE_START    0x0300 - 0x30
 #define VOLUME_TABLE_SIZE      0x100
 
-; chosen by a fair dice roll; guaranteed random
-#define I2C_ADDRESS             0x3A
-
 ; ----------------------------------------------------------------------------
 ; General defines
 
@@ -77,7 +74,6 @@
 ; temp:         free to use as a temp reg.
 ; temp_ISR:     temp reg only used in ISR.
 ; mix_shift:    how much to shift the final mixed sample (hireg: must be compared to immediate)
-; i2c_state:    current state in the i2c bus state machine
 #define temp         16
 #define temp_ISR     17
 #define mix_shift    18
