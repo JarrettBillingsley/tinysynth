@@ -2,6 +2,11 @@
 
 #include "tinysynth.inc"
 
+#define SIM_UPDATE_START sbi	IO(PORTB), 1
+#define SIM_UPDATE_END   cbi	IO(PORTB), 1
+#define SIM_SAMPLE_OUT1  sbi	IO(PORTB), 0
+#define SIM_SAMPLE_OUT2  cbi	IO(PORTB), 0
+
 ; ----------------------------------------------------------------------------
 ; test data
 
@@ -15,11 +20,6 @@ channels:
 	.byte 0x01, 0x00, 0x00, 0x60, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x0F, 0, 0, 0, 0, 0, 0
 	.byte 0x01, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x0F, 0, 0, 0, 0, 0, 0
 	.byte 0x01, 0x00, 0x00, 0x20, 0x00, 0x01, 0x00, 0x1F, 0x00, 0x0F, 0, 0, 0, 0, 0, 0
-
-.global fug
-.type fug, @object
-.size fug, 1
-fug: .byte 0
 
 .org SAMPLE_RAM_START
 
@@ -80,17 +80,14 @@ TIMER1_OVF_vect:
 	tst	sample_ready
 	breq	.no_sample
 
+	SIM_SAMPLE_OUT1
+	SIM_SAMPLE_OUT2
+
 	; clear the flag and output the sample buffer
 	clr	sample_ready
 	out	IO(OCR1B), sample_buf
 
-	sts	fug, sample_buf
-
 .no_sample:
-	; reset the A comparator to say "no more commands!"
-	ldi	temp_ISR, 255
-	out	IO(OCR1A), temp_ISR
-
 	out	IO(SREG), sreg_save
 	reti
 
@@ -133,7 +130,7 @@ io_setup:
 
 pwm_setup:
 	; Set compare unit values
-	ldi	temp, 128
+	ldi	temp, 0
 	out	IO(OCR1B), temp
 	ldi	temp, 255
 	out	IO(OCR1A), temp
@@ -201,6 +198,8 @@ main:
 
 0:	tst	sample_ready
 	brne	0b
+
+	SIM_UPDATE_START
 
 	; reset regs (5 cycles)
 	ldi	yl, RAM_START
@@ -323,7 +322,8 @@ main:
 	ror	sample_buf
 
 	; tell the ISR it's ready (4 | 239)
-0:	inc	sample_ready
+0:	SIM_UPDATE_END
+	inc	sample_ready
 
 	;in	temp, IO(TCNT1)
 	;out	IO(OCR1A), temp
