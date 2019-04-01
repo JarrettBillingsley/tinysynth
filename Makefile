@@ -3,9 +3,9 @@ CLOCK      = 16500000            # 16.5Mhz
 OBJECTS    = synth.o cmd.o sim.o # Add more objects for each .c file here
 
 UPLOAD = ./micronucleus --run
-COMPILE = avr-gcc -Wall -Werror -O -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+COMPILE = avr-gcc -Wall -Werror -O -g -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 ASSEMBLE = avr-as --fatal-warnings -mmcu=$(DEVICE)
-SIMULATE = simavr
+SIMULATE = ~/src/simavr/simavr/obj-x86_64-apple-darwin18.0.0/run_avr.elf
 
 all:    synth.hex
 
@@ -22,7 +22,7 @@ flash: all
 	$(UPLOAD) synth.hex
 
 simulate: all
-	$(SIMULATE) synth.elf
+	$(SIMULATE) -i input_cmd1.vcd -v -v -v -v -v -v synth.elf
 
 clean:
 	rm -f synth.hex synth.elf $(OBJECTS)

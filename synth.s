@@ -2,10 +2,13 @@
 
 #include "tinysynth.inc"
 
-#define SIM_UPDATE_START sbi	IO(PORTB), 1
-#define SIM_UPDATE_END   cbi	IO(PORTB), 1
-#define SIM_SAMPLE_OUT1  sbi	IO(PORTB), 0
-#define SIM_SAMPLE_OUT2  cbi	IO(PORTB), 0
+#if 0
+#define SIM_UPDATE_START sbi	SIM_OUTPUT, 0
+#define SIM_UPDATE_END   cbi	SIM_OUTPUT, 0
+#else
+#define SIM_UPDATE_START
+#define SIM_UPDATE_END
+#endif
 
 ; ----------------------------------------------------------------------------
 ; test data
@@ -57,7 +60,7 @@ sample_ram:
 
 init_data:
 	ldi	temp, hi8(_edata)
-	ldi	xl, 0x60
+	ldi	xl, RAM_START
 	ldi	xh, 0x00
 	ldi	zl, lo8(_etext)
 	ldi	zh, hi8(_etext)
@@ -77,14 +80,11 @@ TIMER1_OVF_vect:
 	in	sreg_save, IO(SREG)
 
 	; any sample ready?
-	tst	sample_ready
-	breq	.no_sample
-
-	SIM_SAMPLE_OUT1
-	SIM_SAMPLE_OUT2
+	sbis	sample_ready
+	rjmp	.no_sample
 
 	; clear the flag and output the sample buffer
-	clr	sample_ready
+	cbi	sample_ready
 	out	IO(OCR1B), sample_buf
 
 .no_sample:
@@ -120,8 +120,8 @@ adc_read:
 ; io setup
 
 io_setup:
-	; output on PB4 (sound) and PB1 (SPI DO)
-	ldi	temp, _BV(DDB4) | _BV(DDB1) ;| _BV(DDB0)
+	; output on PB4 (sound) and PB3 (command ready)
+	ldi	temp, _BV(DDB4) | _BV(DDB3)
 	out	IO(DDRB), temp
 	ret
 
@@ -196,8 +196,8 @@ main:
 	mov     noise_vol, temp
 #endif
 
-0:	tst	sample_ready
-	brne	0b
+0:	sbic	sample_ready
+	rjmp	0b
 
 	SIM_UPDATE_START
 
@@ -323,11 +323,13 @@ main:
 
 	; tell the ISR it's ready (4 | 239)
 0:	SIM_UPDATE_END
-	inc	sample_ready
+	sbi	sample_ready
 
-	;in	temp, IO(TCNT1)
-	;out	IO(OCR1A), temp
+	; ----------------------------------------------------------------------------
+	; look for commands!
 
+	sbrc	cmd_state, CMD_STATE_READY_BIT
+	rcall	cmd_process
 	rjmp	.main_loop
 
 ; ----------------------------------------------------------------------------
@@ -336,6 +338,7 @@ main:
 
 .org VOLUME_TABLE_START
 .size volume_table, VOLUME_TABLE_SIZE
+.type volume_table, @object
 volume_table:
 	.byte 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	.byte 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,0x11

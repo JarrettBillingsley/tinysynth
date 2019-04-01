@@ -1,6 +1,6 @@
 *.o
 *.hex
 *.elf
-*.vcd
+gtkwave_trace.vcd
 *.gtkw
 micronucleus

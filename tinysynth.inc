@@ -27,11 +27,19 @@
 ; ----------------------------------------------------------------------------
 ; Register defines
 
+; IO REGISTERS AND IO REGISTER BITS
+
+; SIM_OUTPUT:   used to output debugging info in the simulator (simavr)
+; sample_ready: 1 when the main loop has produced a sample, 0 when ISR needs one
+
+#define SIM_OUTPUT   IO(GPIOR0)
+#define sample_ready IO(GPIOR1), 0
+#define cmd_ready    IO(PORTB), 3
+
 ; LOW REGISTERS
 
 ; ZERO:         always holds 0.
 ; sreg_save:    saves status reg in ISR.
-; sample_ready: 1 when the main loop has produced a sample, 0 when ISR needs one
 ; sample_buf:   16-bit accumulator for mixing samples; ISR outputs low byte when sample_ready=1
 ; noise_vol:    volume of noise channel (0..15)
 ; noise_lfsr:   16-bit linear feedback shift reg for noise channel
@@ -49,25 +57,24 @@
 
 #define ZERO         0
 #define sreg_save    1
-#define sample_ready 2
-#define sample_buf   3
+#define sample_buf   2
 ; ^ 16-bit
-#define noise_vol    5
-#define noise_lfsr   6
+#define noise_vol    4
+#define noise_lfsr   5
 ; ^ 16-bit
-#define noise_ctr    8
-#define noise_reload 9
-#define flags        10
-#define phase        11
+#define noise_ctr    7
+#define noise_reload 8
+#define flags        9
+#define phase        10
 #define offset       phase
 #define volume       phase
-#define rate         12
+#define rate         11
 #define len_mask     rate
 #define sample       rate
 #define start        rate
-#define I            13
+#define I            12
 
-; 14-15 unused
+; 13-15 unused
 
 ; HIGH REGISTERS
 
@@ -78,7 +85,28 @@
 #define temp_ISR     17
 #define mix_shift    18
 
-; 19-25 unused
+; cmd_state: command state machine state
+; cmd_op:    what command to execute
+; cmd_arg1:  1st argument byte
+; cmd_arg2:  2nd argument byte
+#define cmd_state 19
+#define cmd_op    20
+#define cmd_arg1  21
+#define cmd_arg2  22
+
+; command state value is "one-hot"
+#define CMD_STATE_WAIT_OP    1
+#define CMD_STATE_WAIT_ARG1  2
+#define CMD_STATE_WAIT_ARG2  4
+#define CMD_STATE_READY      8
+
+; these are the bit numbers for each state
+#define CMD_STATE_WAIT_OP_BIT    0
+#define CMD_STATE_WAIT_ARG1_BIT  1
+#define CMD_STATE_WAIT_ARG2_BIT  2
+#define CMD_STATE_READY_BIT      3
+
+; 23-25 unused
 
 ; x: sample ram pointer
 ; y: channel data pointer
