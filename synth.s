@@ -176,7 +176,7 @@ main:
 	inc	noise_lfsr
 
 	; enable noise temporarily
-	ldi	temp, 0
+	ldi	temp, 8
 	mov	noise_vol, temp
 
 	; setup pointers

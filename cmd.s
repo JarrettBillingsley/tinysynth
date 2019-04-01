@@ -80,11 +80,12 @@ cmd_process:
 	rjmp	.cmd_write_sample
 
 .cmd_silence:
-	; silence all channels (+10)
+	; silence all channels (+11)
 	sts	(RAM_START + (0 * SIZEOF_CHANNEL)), ZERO
 	sts	(RAM_START + (1 * SIZEOF_CHANNEL)), ZERO
 	sts	(RAM_START + (2 * SIZEOF_CHANNEL)), ZERO
 	sts	(RAM_START + (3 * SIZEOF_CHANNEL)), ZERO
+	clr	noise_vol
 	rjmp	.finish_command
 
 .cmd_mix_shift:
@@ -103,7 +104,7 @@ cmd_process:
 
 	; 3 from cpi-brge above, overall (+9)
 .write_noise:
-	; 0x40 == noise_ctr (3+5 = 8)
+	; 0x40 == noise_vol (3+5 = 8)
 	; 0x41 == noise_reload (3+6 = 9)
 	; others invalid (3+4 = 7)
 	breq	0f ; equal to 0x40 (from the cpi above)
@@ -111,7 +112,7 @@ cmd_process:
 	brne	.finish_command
 	mov	noise_reload, cmd_arg2
 	rjmp	.finish_command
-0:	mov	noise_ctr, cmd_arg2
+0:	mov	noise_vol, cmd_arg2
 	rjmp	.finish_command
 
 .cmd_write_sample:
@@ -120,12 +121,12 @@ cmd_process:
 	st	x, cmd_arg2
 
 .finish_command:
-	; longest command was silence all (+10 = 20)
+	; longest command was silence all (+11 = 21)
 
-	; reset state machine and tell host we're accepting commands (+3 = 23)
+	; reset state machine and tell host we're accepting commands (+3 = 24)
 	ldi	cmd_state, CMD_STATE_WAIT_OP
 	sbi	cmd_ready
 
-	; restore zh and return (+6 = 29)
+	; restore zh and return (+6 = 30)
 	pop	zh
 	ret
