@@ -93,20 +93,23 @@
 #define cmd_op    20
 #define cmd_arg1  21
 #define cmd_arg2  22
+#define cmd_arg3  23
 
 ; command state value is "one-hot"
 #define CMD_STATE_WAIT_OP    1
 #define CMD_STATE_WAIT_ARG1  2
 #define CMD_STATE_WAIT_ARG2  4
-#define CMD_STATE_READY      8
+#define CMD_STATE_WAIT_ARG3  8
+#define CMD_STATE_READY      16
 
 ; these are the bit numbers for each state
 #define CMD_STATE_WAIT_OP_BIT    0
 #define CMD_STATE_WAIT_ARG1_BIT  1
 #define CMD_STATE_WAIT_ARG2_BIT  2
-#define CMD_STATE_READY_BIT      3
+#define CMD_STATE_WAIT_ARG3_BIT  4
+#define CMD_STATE_READY_BIT      4
 
-; 23-25 unused
+; 24-25 unused
 
 ; x: sample ram pointer
 ; y: channel data pointer

@@ -5,36 +5,40 @@
 ; ----------------------------------------------------------------------------
 ; USI overflow vector
 
-; receiving full 3-byte command 17 + 17 + 18 = 52 cyc
-; update loop takes 239, so 291 cyc; leaves ~200 cyc for command processing (so ROOMY)
+; receiving full 4-byte command 19 + 19 + 19 + 20 = 77 cyc
+; update loop takes 239, so 316 cyc; leaves ~180 cyc for command processing (STILL so ROOMY)
 
 .global	USI_OVF_vect
 USI_OVF_vect:
+	; TODO: use a second sreg_save reg and re-enable interrupts
+
 	; (+3 = 3)
 	in	sreg_save, IO(SREG)
 	sbi	IO(USISR), USIOIF   ; acknowledge interrupt
 
-	; all paths are (+6 = 9)
+	; all paths are (+8 = 11)
 	sbrc	cmd_state, CMD_STATE_WAIT_OP_BIT
 	in	cmd_op, IO(USIBR)              ; got op
 	sbrc	cmd_state, CMD_STATE_WAIT_ARG1_BIT
 	in	cmd_arg1, IO(USIBR)            ; got arg1
 	sbrc	cmd_state, CMD_STATE_WAIT_ARG2_BIT
 	in	cmd_arg2, IO(USIBR)            ; got arg2
+	sbrc	cmd_state, CMD_STATE_WAIT_ARG3_BIT
+	in	cmd_arg3, IO(USIBR)            ; got arg3
 
-	; (+1 = 10)
+	; (+1 = 12)
 	; note: if we were in CMD_STATE_READY, this enters an invalid state
 	; but we're assuming the host will play nice.
 	lsl	cmd_state
 
-	; (+2/3 = 12/13)
+	; (+2/3 = 14/15)
 	sbrc	cmd_state, CMD_STATE_READY_BIT
 	cbi	cmd_ready
 
 	;in	temp_ISR, IO(USIBR)
 	;out	SIM_OUTPUT, temp_ISR
 
-	; (+5 = 17/18)
+	; (+5 = 19/20)
 	out	IO(SREG), sreg_save
 	reti
 
@@ -67,20 +71,27 @@ cmd_process:
 	; using z for indirect jump in this function (+2 = 2)
 	push	zh
 
-	; we've got a command ready. let's dispatch (+8 = 10)
-	ldi	zh, pm_hi8(.jumptable) ; z = jumptable + 2*cmd_op
-	ldi	zl, pm_lo8(.jumptable)
+	; dispatch based on the top bits
+	sbrc	cmd_op, 7
+	rjmp	.sample_ram_cmds ; top bit set, must be sample ram command
+	sbrc	cmd_op, 6
+	rjmp	.channel_cmds    ; second from top bit set, must be channel command
+
+	; got here, (+4 = 6)
+	; must be a global command; let's dispatch (+8 = 10)
+	ldi	zh, pm_hi8(.global_cmd_jumptable) ; z = global_cmd_jumptable + 2*cmd_op
+	ldi	zl, pm_lo8(.global_cmd_jumptable)
 	add	zl, cmd_op
 	adc	zl, ZERO
 	ijmp
-.jumptable:
+.global_cmd_jumptable:
 	rjmp	.cmd_silence
 	rjmp	.cmd_mix_shift
-	rjmp	.cmd_write_reg
-	rjmp	.cmd_write_sample
+	rjmp	.cmd_noise_vol
+	rjmp	.cmd_noise_reload
 
 .cmd_silence:
-	; silence all channels (+11)
+	; silence all channels (+11 = 21)
 	sts	(RAM_START + (0 * SIZEOF_CHANNEL)), ZERO
 	sts	(RAM_START + (1 * SIZEOF_CHANNEL)), ZERO
 	sts	(RAM_START + (2 * SIZEOF_CHANNEL)), ZERO
@@ -89,44 +100,108 @@ cmd_process:
 	rjmp	.finish_command
 
 .cmd_mix_shift:
-	; set mix shift (+4)
+	; set mix shift (+4 = 14)
 	andi	cmd_arg1, 3
 	mov	mix_shift, cmd_arg1
 	rjmp	.finish_command
 
-.cmd_write_reg:
-	; write "register" (+7)
-	cpi	cmd_arg1, 0x40
-	brge	.write_noise
-	mov	yl, cmd_arg1
-	st	Y, cmd_arg2
+.cmd_noise_vol:
+	; set noise volume (+4 = 14)
+	andi	cmd_arg1, 15
+	mov	noise_vol, cmd_arg1
 	rjmp	.finish_command
 
-	; 3 from cpi-brge above, overall (+9)
-.write_noise:
-	; 0x40 == noise_vol (3+5 = 8)
-	; 0x41 == noise_reload (3+6 = 9)
-	; others invalid (3+4 = 7)
-	breq	0f ; equal to 0x40 (from the cpi above)
-	cpi	cmd_arg1, 0x41
-	brne	.finish_command
-	mov	noise_reload, cmd_arg2
-	rjmp	.finish_command
-0:	mov	noise_vol, cmd_arg2
+.cmd_noise_reload:
+	; set noise reload (+3 = 13)
+	mov	noise_reload, cmd_arg1
 	rjmp	.finish_command
 
-.cmd_write_sample:
-	; write value to sample RAM (+3)
+	;---------------------------------------------------------
+
+.sample_ram_cmds: ; (+3 = 5)
+
+	; always store first arg (+3 = 8)
 	mov	xl, cmd_arg1
-	st	x, cmd_arg2
+	st	x+, cmd_arg2
+
+	; optionally store second (+2/3 = 10/11)
+	sbrc	cmd_op, 0
+	st	x, cmd_arg3
+
+	; finish (+2 = 12/13)
+	rjmp	.finish_command
+
+	;---------------------------------------------------------
+.channel_cmds: ; (+5 = 7)
+	; extract channel number (leave it in upper nybble) (+3 = 10)
+	mov	temp, cmd_op
+	subi	temp, 0x40
+	and	cmd_op, 0xF
+
+	; compute channel base address (+2 = 12)
+	ldi	yl, RAM_START
+	add	yl, temp
+
+	; let's dispatch (+8 = 20)
+	ldi	zh, pm_hi8(.channel_cmd_jumptable) ; z = channel_cmd_jumptable + 2*cmd_op
+	ldi	zl, pm_lo8(.channel_cmd_jumptable)
+	add	zl, cmd_op
+	adc	zl, ZERO
+	ijmp
+.channel_cmd_jumptable:
+	rjmp	.channel_flags
+	rjmp	.channel_rate
+	rjmp	.channel_phase
+	rjmp	.channel_rate_reset
+	rjmp	.channel_sample
+	rjmp	.channel_vol
+
+.channel_flags: ; set flags (+3 = 23)
+	st	y, cmd_arg1
+	rjmp	.finish_command
+.channel_rate:  ; set rate (+11 = 31)
+	inc	yl
+	st	y+, cmd_arg1
+	inc	yl
+	st	y+, cmd_arg2
+	inc	yl
+	st	y+, cmd_arg3
+	rjmp	.finish_command
+.channel_phase: ; set phase (+11 = 31)
+	subi	yl, -2 ; add 2
+	st	y+, cmd_arg1
+	inc	yl
+	st	y+, cmd_arg2
+	inc	yl
+	st	y+, cmd_arg3
+	rjmp	.finish_command
+.channel_rate_reset: ; set rate and reset phase (+15 = 35)
+	inc	yl
+	st	y+, cmd_arg1
+	st	y+, ZERO
+	st	y+, cmd_arg2
+	st	y+, ZERO
+	st	y+, cmd_arg3
+	st	y+, ZERO
+	rjmp	.finish_command
+.channel_sample: ; set sample (+7 = 27)
+	subi	yl, -7 ;add 7
+	st	y+, cmd_arg2 ; len
+	st	y+, cmd_arg1 ; start
+	rjmp	.finish_command
+.channel_vol: ; set volume (+6 = 26)
+	subi	yl, -9; add 9
+	andi	cmd_arg1, 0xF
+	st	y, cmd_arg1
+	rjmp	.finish_command
 
 .finish_command:
-	; longest command was silence all (+11 = 21)
+	; longest command was set rate and reset phase (35)
 
-	; reset state machine and tell host we're accepting commands (+3 = 24)
+	; reset state machine and tell host we're accepting commands (+3 = 38)
 	ldi	cmd_state, CMD_STATE_WAIT_OP
 	sbi	cmd_ready
 
-	; restore zh and return (+6 = 30)
+	; restore zh and return (+6 = 44)
 	pop	zh
 	ret
