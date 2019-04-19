@@ -133,10 +133,10 @@ cmd_process:
 
 	;---------------------------------------------------------
 .channel_cmds: ; (+5 = 7)
-	; extract channel number (leave it in upper nybble) (+3 = 10)
+	; separate channel number (in upper nybble) from command (lower nybble) (+3 = 10)
 	mov	temp, cmd_op
-	subi	temp, 0x40
-	and	cmd_op, 0xF
+	andi	temp, 0x30
+	andi	cmd_op, 0xF
 
 	; compute channel base address (+2 = 12)
 	ldi	yl, RAM_START

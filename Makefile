@@ -22,7 +22,7 @@ flash: all
 	$(UPLOAD) synth.hex
 
 simulate: all
-	$(SIMULATE) -i input_cmd1.vcd -v -v -v -v -v -v synth.elf
+	$(SIMULATE) -i cmd_test_5.vcd -v -v -v -v -v -v synth.elf
 
 clean:
 	rm -f synth.hex synth.elf $(OBJECTS)
