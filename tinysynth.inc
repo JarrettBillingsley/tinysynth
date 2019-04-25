@@ -8,7 +8,6 @@
 #define RAM_START               0x60
 #define SAMPLE_RAM_START       0x100 - RAM_START
 #define SAMPLE_RAM_SIZE        0x100
-#define VOLUME_TABLE_START    0x0300 - 0x30
 #define VOLUME_TABLE_SIZE      0x100
 
 ; ----------------------------------------------------------------------------
