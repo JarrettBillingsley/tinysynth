@@ -131,6 +131,7 @@ main:
 	clr	noise_lfsr
 	clr	noise_lfsr+1
 	inc	noise_lfsr
+	clr	noise_reload
 
 	; enable noise temporarily
 	ldi	temp, 8

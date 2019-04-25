@@ -105,7 +105,7 @@
 #define CMD_STATE_WAIT_OP_BIT    0
 #define CMD_STATE_WAIT_ARG1_BIT  1
 #define CMD_STATE_WAIT_ARG2_BIT  2
-#define CMD_STATE_WAIT_ARG3_BIT  4
+#define CMD_STATE_WAIT_ARG3_BIT  3
 #define CMD_STATE_READY_BIT      4
 
 ; 24-25 unused
