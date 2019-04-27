@@ -1,7 +1,7 @@
 ; ----------------------------------------------------------------------------
 ; Constant defines
 
-#define NUM_CHANNELS               4
+#define NUM_CHANNELS               8
 #define SIZEOF_CHANNEL            16
 #define DISABLED_CHANNEL_SKIP     15
 #define ENABLED_CHANNEL_SKIP       6

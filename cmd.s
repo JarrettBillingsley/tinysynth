@@ -95,12 +95,10 @@ cmd_process:
 
 	; dispatch based on the top bits
 	sbrc	cmd_op, 7
-	rjmp	.sample_ram_cmds ; top bit set, must be sample ram command
-	sbrc	cmd_op, 6
 	rjmp	.channel_cmds    ; second from top bit set, must be channel command
+	; got here, (+2 = 4)
 
-	; got here, (+4 = 6)
-	; must be a global command; let's dispatch (+8 = 10)
+	; must be a global command; let's dispatch (+8 = 12)
 	ldi	zh, pm_hi8(.global_cmd_jumptable) ; z = global_cmd_jumptable + 2*cmd_op
 	ldi	zl, pm_lo8(.global_cmd_jumptable)
 	add	zl, cmd_op
@@ -111,60 +109,66 @@ cmd_process:
 	rjmp	.cmd_mix_shift
 	rjmp	.cmd_noise_vol
 	rjmp	.cmd_noise_reload
+	rjmp	.cmd_sample_1
+	rjmp	.cmd_sample_2
 
 .cmd_silence:
-	; silence all channels (+11 = 21)
+	; silence all channels (+19 = 31)
 	sts	(RAM_START + (0 * SIZEOF_CHANNEL)), ZERO
 	sts	(RAM_START + (1 * SIZEOF_CHANNEL)), ZERO
 	sts	(RAM_START + (2 * SIZEOF_CHANNEL)), ZERO
 	sts	(RAM_START + (3 * SIZEOF_CHANNEL)), ZERO
+#if NUM_CHANNELS == 8
+	sts	(RAM_START + (4 * SIZEOF_CHANNEL)), ZERO
+	sts	(RAM_START + (5 * SIZEOF_CHANNEL)), ZERO
+	sts	(RAM_START + (6 * SIZEOF_CHANNEL)), ZERO
+	sts	(RAM_START + (7 * SIZEOF_CHANNEL)), ZERO
+#endif
 	clr	noise_vol
 	rjmp	.finish_command
 
 .cmd_mix_shift:
-	; set mix shift (+4 = 14)
+	; set mix shift (+4 = 16)
 	andi	cmd_arg1, 3
 	mov	mix_shift, cmd_arg1
 	rjmp	.finish_command
 
 .cmd_noise_vol:
-	; set noise volume (+4 = 14)
+	; set noise volume (+4 = 16)
 	andi	cmd_arg1, 15
 	mov	noise_vol, cmd_arg1
 	rjmp	.finish_command
 
 .cmd_noise_reload:
-	; set noise reload (+3 = 13)
+	; set noise reload (+3 = 15)
 	mov	noise_reload, cmd_arg1
 	rjmp	.finish_command
 
-	;---------------------------------------------------------
-
-.sample_ram_cmds: ; (+3 = 5)
-
-	; always store first arg (+3 = 8)
+.cmd_sample_1:
+	; store 1 sample (+5 = 17)
 	mov	xl, cmd_arg1
 	st	x+, cmd_arg2
+	rjmp	.finish_command
 
-	; optionally store second (+2/3 = 10/11)
-	sbrc	cmd_op, 0
+.cmd_sample_2:
+	; store 2 samples (+7 = 19)
+	mov	xl, cmd_arg1
+	st	x+, cmd_arg2
 	st	x, cmd_arg3
-
-	; finish (+2 = 12/13)
 	rjmp	.finish_command
 
 	;---------------------------------------------------------
-.channel_cmds: ; (+5 = 7)
-	; separate channel number (in upper nybble) from command (lower nybble) (+3 = 10)
+.channel_cmds: ; (+3 = 5)
+	; separate channel number (in upper nybble) from command (lower nybble) (+3 = 8)
 	mov	temp, cmd_op
-	andi	temp, 0x30
+	andi	temp, 0x70
 	andi	cmd_op, 0xF
 
-	; compute channel base address (+2 = 12)
+	; compute channel base address (+2 = 10)
 	ldi	yl, RAM_START
 	add	yl, temp
 
-	; let's dispatch (+8 = 20)
+	; let's dispatch (+8 = 18)
 	ldi	zh, pm_hi8(.channel_cmd_jumptable) ; z = channel_cmd_jumptable + 2*cmd_op
 	ldi	zl, pm_lo8(.channel_cmd_jumptable)
 	add	zl, cmd_op
@@ -178,10 +182,13 @@ cmd_process:
 	rjmp	.channel_sample
 	rjmp	.channel_vol
 
-.channel_flags: ; set flags (+3 = 23)
+.channel_flags:
+	; set flags (+3 = 21)
 	st	y, cmd_arg1
 	rjmp	.finish_command
-.channel_rate:  ; set rate (+11 = 31)
+
+.channel_rate:
+	; set rate (+11 = 29)
 	inc	yl
 	st	y+, cmd_arg1
 	inc	yl
@@ -189,7 +196,9 @@ cmd_process:
 	inc	yl
 	st	y+, cmd_arg3
 	rjmp	.finish_command
-.channel_phase: ; set phase (+11 = 31)
+
+.channel_phase:
+	; set phase (+11 = 29)
 	subi	yl, -2 ; add 2
 	st	y+, cmd_arg1
 	inc	yl
@@ -197,7 +206,9 @@ cmd_process:
 	inc	yl
 	st	y+, cmd_arg3
 	rjmp	.finish_command
-.channel_rate_reset: ; set rate and reset phase (+15 = 35)
+
+.channel_rate_reset:
+	; set rate and reset phase (+15 = 33)
 	inc	yl
 	st	y+, cmd_arg1
 	st	y+, ZERO
@@ -206,24 +217,28 @@ cmd_process:
 	st	y+, cmd_arg3
 	st	y+, ZERO
 	rjmp	.finish_command
-.channel_sample: ; set sample (+7 = 27)
+
+.channel_sample:
+	; set sample (+7 = 25)
 	subi	yl, -7 ;add 7
 	st	y+, cmd_arg2 ; len
 	st	y+, cmd_arg1 ; start
 	rjmp	.finish_command
-.channel_vol: ; set volume (+6 = 26)
+
+.channel_vol:
+	; set volume (+6 = 24)
 	subi	yl, -9; add 9
 	andi	cmd_arg1, 0xF
 	st	y, cmd_arg1
 	rjmp	.finish_command
 
 .finish_command:
-	; longest command was set rate and reset phase (35)
+	; longest command was set rate and reset phase (33)
 
-	; reset state machine and tell host we're accepting commands (+3 = 38)
+	; reset state machine and tell host we're accepting commands (+3 = 36)
 	ldi	cmd_state, CMD_STATE_WAIT_OP
 	sbi	cmd_ready
 
-	; restore zh and return (+6 = 44)
+	; restore zh and return (+6 = 42)
 	pop	zh
 	ret
