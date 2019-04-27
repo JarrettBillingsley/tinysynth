@@ -221,7 +221,7 @@ main:
 	dec	I
 	brne	.update_loop
 
-	; at this point, the loop has taken (51 x 4 - 1 + 5) = 208 cycles.
+	; at this point, the loop has taken (51 x 4 - 1 + 5) = 412 cycles.
 
 	; might seem silly to always update the noise channel, but we're optimizing for fastest
 	; worst-case cycle times, and the additional check for disabled adds a few cycles.
@@ -253,14 +253,14 @@ main:
 	bld	noise_lfsr+1, 6
 
 .noise_output:
-	; output noise sample (13 from above + 5 here = 18 | 226)
+	; output noise sample (13 from above + 5 here = 18 | 430)
 	mov	volume, sample
 	swap	volume
 	or	sample, volume
 	add	sample_buf, sample
 	adc	sample_buf+1, ZERO
 
-	; shift sample (cycles needed: 8 for 0, 9 for all others) (9 | 235)
+	; shift sample (cycles needed: 8 for 0, 9 for all others) (9 | 439)
 	cpi	mix_shift, 3
 	breq	3f
 	cpi	mix_shift, 2
@@ -275,15 +275,15 @@ main:
 1:	lsr	sample_buf+1
 	ror	sample_buf
 
-	; tell the ISR it's ready (4 | 239)
+	; tell the ISR it's ready (2 | 441)
 0:	SIM_UPDATE_END
 	sbi	sample_ready
 
-	; ----------------------------------------------------------------------------
-	; look for commands!
-
+	; look for commands! (2/3 | 443/444)
 	sbrc	cmd_state, CMD_STATE_READY_BIT
 	rcall	cmd_process
+
+	; loop (2 | 445/446)
 	rjmp	.main_loop
 
 ; ----------------------------------------------------------------------------
