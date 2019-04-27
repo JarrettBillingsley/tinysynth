@@ -10,7 +10,7 @@ I'm developing it on a [Digispark](http://digistump.com/products/1) clone, but i
 
 ## Specs
 
-- **4 channels of wavetable goodness,** each with:
+- **8 channels of wavetable goodness,** each with:
 	- 24-bit frequency range
 	- 16 linear volume levels
 	- sample start at any byte boundary in sample RAM
@@ -25,10 +25,11 @@ I'm developing it on a [Digispark](http://digistump.com/products/1) clone, but i
 	- no division, divide by 2, divide by 4, or divide by 8
 	- keeps 8-bit output in range
 		- ...or, crank the volume for fun distortion effects when using multiple channels!
-- **32KHz PWM output**
+- **16KHz PWM output**
 	- combine with an RC low-pass filter (schematic below) for a headphone-level signal!
 - **Controlled over SPI bus**
-	- (protocol still being developed)
+	- sort of... only MISO and SCK
+	- plus a READY signal from synth to host
 
 ## Circuit schematic
 
@@ -56,7 +57,7 @@ The output is mono, so the output jack left and right channels **should be tied 
 
 ## Compiling
 
-I'm developing this with the **AVR-GCC toolchain** on Linux. I think the assembly syntax, at least the directives, differ from Atmel's official assembler, so it probably can't be compiled with that.
+I'm developing this with the **AVR-GCC toolchain.** It works on both Linux and macOS for sure. I think the assembly syntax, at least the directives, differ from Atmel's official assembler, so it probably can't be compiled with that.
 
 ## Fuses
 
