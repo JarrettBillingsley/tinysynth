@@ -10,13 +10,14 @@
 
 .global	USI_OVF_vect
 USI_OVF_vect:
-	; TODO: use a second sreg_save reg and re-enable interrupts
+	; acknowledge interrupt and input SREG (+3 = 3)
+	in	sreg_save2, IO(SREG)
+	sbi	IO(USISR), USIOIF
 
-	; (+3 = 3)
-	in	sreg_save, IO(SREG)
-	sbi	IO(USISR), USIOIF   ; acknowledge interrupt
+	; re-enable interrupts so that a nested timer interrupt can happen (+1 = 4)
+	sei
 
-	; all paths are (+8 = 11)
+	; all paths are (+8 = 12)
 	sbrc	cmd_state, CMD_STATE_WAIT_OP_BIT
 	in	cmd_op, IO(USIBR)              ; got op
 	sbrc	cmd_state, CMD_STATE_WAIT_ARG1_BIT
@@ -26,19 +27,35 @@ USI_OVF_vect:
 	sbrc	cmd_state, CMD_STATE_WAIT_ARG3_BIT
 	in	cmd_arg3, IO(USIBR)            ; got arg3
 
-	; (+1 = 12)
+	; (+1 = 13)
 	; note: if we were in CMD_STATE_READY, this enters an invalid state
 	; but we're assuming the host will play nice.
 	lsl	cmd_state
 
-	; (+2/3 = 14/15)
+	; (+2/3 = 15/16)
 	sbrc	cmd_state, CMD_STATE_READY_BIT
 	cbi	cmd_ready
 
-	;in	temp_ISR, IO(USIBR)
-	;out	SIM_OUTPUT, temp_ISR
+	; (+5 = 20/21)
+	out	IO(SREG), sreg_save2
+	reti
 
-	; (+5 = 19/20)
+; ----------------------------------------------------------------------------
+; pin change vector (for sync)
+; not likely to happen often, so let's not worry about it interrupting other stuff
+
+.global	PCINT0_vect
+PCINT0_vect:
+	in	sreg_save, IO(SREG)
+
+	; don't fuck up a command that's in progress
+	sbic	cmd_ready
+	ldi	cmd_state, CMD_STATE_WAIT_OP
+
+	; but reset the USI regs regardless
+	out	IO(USIDR), ZERO
+	out	IO(USISR), ZERO
+
 	out	IO(SREG), sreg_save
 	reti
 
@@ -47,17 +64,22 @@ USI_OVF_vect:
 
 .global cmd_setup
 cmd_setup:
-	; set up state machine
-	ldi	cmd_state, CMD_STATE_WAIT_OP
-
-	out	IO(USIDR), ZERO
-	out	IO(USISR), ZERO ; clear USI counter too
-
 	; USIOIE == 1 (enable counter overflow interrupt)
 	; USIWM == 01 (three-wire/SPI mode)
 	; USICS == 10 (external clock; register clocked on positive edge)
 	ldi	temp, _BV(USIOIE) | _BV(USIWM0) | _BV(USICS1)
 	out	IO(USICR), temp
+
+	; set up state machine
+	ldi	cmd_state, CMD_STATE_WAIT_OP
+	out	IO(USIDR), ZERO
+	out	IO(USISR), ZERO ; clear USI counter too
+
+	; turn on pin change interrupt for PB1 (sync signal)
+	ldi	temp, _BV(PCINT1)
+	out	IO(PCMSK), temp
+	ldi	temp, _BV(PCIE)
+	out	IO(GIMSK), temp
 
 	; tell host we are ready to accept commands
 	sbi	cmd_ready
