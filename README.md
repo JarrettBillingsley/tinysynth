@@ -30,6 +30,7 @@ I'm developing it on a [Digispark](http://digistump.com/products/1) clone, but i
 - **Controlled over SPI bus**
 	- sort of... only MISO and SCK
 	- plus a READY signal from synth to host
+	- and a SYNC signal for... well... uh..........
 
 ## Circuit schematic
 
