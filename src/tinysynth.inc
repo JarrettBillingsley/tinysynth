@@ -74,6 +74,6 @@
 #define cmd_arg3     23    // 3rd argument byte
 
 ; 24-25 unused
-; x: sample ram pointer
+; x: unused
 ; y: channel data pointer
-; z: volume table pointer
+; z: sample RAM/volume table pointer

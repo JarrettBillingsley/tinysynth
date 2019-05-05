@@ -195,10 +195,10 @@ main:
 	; read start, add to offset, and that's the sample address (4 | 33)
 	ld	start,  y+
 	add	offset, start
-	mov	xl,     offset
+	mov	zl,     offset
 
 	; read sample (picking correct nybble using bit we saved earlier) (5 | 38)
-	ld	zl, x
+	ld	zl, z
 	brts	1f
 	swap	zl
 1:	andi	zl, 0xF
