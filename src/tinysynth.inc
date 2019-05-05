@@ -2,7 +2,7 @@
 ; Constant defines
 
 #define NUM_CHANNELS               8
-#define SIZEOF_CHANNEL             7
+#define SIZEOF_CHANNEL             6
 #define DISABLED_CHANNEL_SKIP (SIZEOF_CHANNEL - 1)
 #define DISABLED_PHASE_SKIP        3
 #define RAM_START               0x60
@@ -63,7 +63,8 @@
 #define start        rate  // the address in sample RAM where the sample starts
 #define I            12    // loop counter for the main update loop (0 .. NUM_CHANNELS)
 #define sreg_save2   13    // saves status reg in USI ISR; it allows nested interrupt for timer ISR
-; 14-15 unused
+#define enabled      14
+; 15 unused
 #define temp         16    // free to use as a temp reg.
 #define temp_ISR     17    // temp reg only used in ISR.
 #define mix_shift    18    // how much to shift the final mixed sample
