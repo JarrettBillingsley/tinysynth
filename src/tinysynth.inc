@@ -2,11 +2,11 @@
 ; Constant defines
 
 #define NUM_CHANNELS               8
-#define SIZEOF_CHANNEL            16
-#define DISABLED_CHANNEL_SKIP     15
-#define ENABLED_CHANNEL_SKIP       6
+#define SIZEOF_CHANNEL             7
+#define DISABLED_CHANNEL_SKIP (SIZEOF_CHANNEL - 1)
+#define DISABLED_PHASE_SKIP        3
 #define RAM_START               0x60
-#define SAMPLE_RAM_START       0x100 - RAM_START
+#define SAMPLE_RAM_START      (0x100 - RAM_START)
 #define SAMPLE_RAM_SIZE        0x100
 #define VOLUME_TABLE_SIZE      0x100
 
