@@ -1,7 +1,4 @@
-*.o
-*.hex
-*.elf
+build/*
 gtkwave_trace.vcd
 *.gtkw
-micronucleus
 voltab.s
