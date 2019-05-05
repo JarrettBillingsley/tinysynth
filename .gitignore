@@ -4,3 +4,4 @@
 gtkwave_trace.vcd
 *.gtkw
 micronucleus
+voltab.s

@@ -15,6 +15,9 @@ synth.o: synth.s tinysynth.inc
 cmd.o: cmd.s tinysynth.inc
 	$(ASSEMBLE) -c cmd.s -o $@
 
+voltab.s: volgen.py
+	python3 $< > $@
+
 voltab.o: voltab.s tinysynth.inc
 	$(ASSEMBLE) -c voltab.s -o $@
 
@@ -39,5 +42,5 @@ simulate: synth.elf
 	$(SIMULATE) -v -v -v -v -v -v synth.elf
 
 clean:
-	rm -f synth.hex synth.elf $(OBJECTS)
+	rm -f synth.hex synth.elf voltab.s $(OBJECTS)
 
