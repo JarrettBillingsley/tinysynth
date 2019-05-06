@@ -37,6 +37,14 @@
 
 #define IO(X) _SFR_IO_ADDR(X)
 
+#if 0
+	#define SIM_UPDATE_START sbi	SIM_OUTPUT, 0
+	#define SIM_UPDATE_END   cbi	SIM_OUTPUT, 0
+#else
+	#define SIM_UPDATE_START
+	#define SIM_UPDATE_END
+#endif
+
 ; ----------------------------------------------------------------------------
 ; Register defines
 

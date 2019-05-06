@@ -1,6 +1,6 @@
 DEVICE     = attiny85
 CLOCK      = 16000000            # 16 Mhz
-OBJECTS    = build/synth.o build/cmd.o build/sim.o build/voltab.o
+OBJECTS    = build/synth.o build/cmd.o build/sim.o build/voltab.o build/data.o
 OBJ        = build/
 
 COMPILE = avr-gcc -Wall -Werror -O -g -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
