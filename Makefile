@@ -9,12 +9,10 @@ SIMULATE = ~/src/simavr/simavr/obj-x86_64-apple-darwin18.5.0/run_avr.elf
 
 all: $(OBJ)synth.hex
 
-src/%.s: src/tinysynth.inc
-
 src/voltab.s: script/volgen.py
 	python3 $< > $@
 
-$(OBJ)%.o: src/%.s
+$(OBJ)%.o: src/%.s src/tinysynth.inc
 	$(ASSEMBLE) -c $< -o $@
 
 $(OBJ)sim.o: src/sim.c
