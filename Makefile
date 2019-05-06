@@ -30,7 +30,7 @@ flash: all
 	avrdude -v -pattiny85 -carduino -P$$(/bin/ls /dev/cu.usbmodem*) -b19200 -Uflash:w:$(OBJ)synth.hex:i
 
 simulate: $(OBJ)synth.elf
-	$(SIMULATE) -v -v -v -v -v -v $(OBJ)synth.elf
+	$(SIMULATE) -i traces/phase_test.vcd -v -v -v -v -v -v $(OBJ)synth.elf
 
 clean:
 	rm -f $(OBJ)synth.hex $(OBJ)synth.elf src/voltab.s $(OBJECTS)

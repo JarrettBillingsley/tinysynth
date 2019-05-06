@@ -82,7 +82,8 @@ main:
 	ldi	zh, hi8(volume_table) ; same as hi8(sample_ram)... heh heh heh
 
 	; ----------------------------------------------------------------------------
-	; command processor setup
+	; state/command processor setup
+	rcall	copy_shadow
 	rcall	cmd_setup
 
 	; let's go!
@@ -109,8 +110,8 @@ main:
 	brcs	.chan_enabled
 
 	; skip over the remaining bytes
-	adiw    xl, DISABLED_PHASE_SKIP
-	adiw	yl, DISABLED_CHANNEL_SKIP
+	adiw    xl, SIZEOF_PHASE
+	adiw	yl, SIZEOF_CHANNEL
 	rjmp	.loop_next
 
 .chan_enabled:

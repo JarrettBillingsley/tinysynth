@@ -106,48 +106,47 @@ cmd_process:
 	ijmp
 .global_cmd_jumptable:
 	rjmp	.cmd_silence
+	rjmp	.cmd_commit
 	rjmp	.cmd_mix_shift
 	rjmp	.cmd_noise_vol
 	rjmp	.cmd_noise_reload
 	rjmp	.cmd_sample_1
 	rjmp	.cmd_sample_2
+	rjmp	.cmd_channel_enable
 
 .cmd_silence:
-	; silence all channels (+19 = 31)
-	sts	(RAM_START + (0 * SIZEOF_CHANNEL)), ZERO
-	sts	(RAM_START + (1 * SIZEOF_CHANNEL)), ZERO
-	sts	(RAM_START + (2 * SIZEOF_CHANNEL)), ZERO
-	sts	(RAM_START + (3 * SIZEOF_CHANNEL)), ZERO
-#if NUM_CHANNELS == 8
-	sts	(RAM_START + (4 * SIZEOF_CHANNEL)), ZERO
-	sts	(RAM_START + (5 * SIZEOF_CHANNEL)), ZERO
-	sts	(RAM_START + (6 * SIZEOF_CHANNEL)), ZERO
-	sts	(RAM_START + (7 * SIZEOF_CHANNEL)), ZERO
-#endif
+	; silence all channels (+9 = 21)
+	sts	shadow_enable, ZERO
+	sts	shadow_noise_vol, ZERO
+	sts	channel_enable, ZERO
 	clr	noise_vol
 	rjmp	.finish_command
 
+.cmd_commit:
+	rcall	copy_shadow
+	rjmp	.finish_command
+
 .cmd_mix_shift:
-	; set mix shift (+4 = 16)
+	; set mix shift (+5 = 17)
 	andi	cmd_arg1, 3
-	mov	mix_shift, cmd_arg1
+	sts	shadow_mix_shift, cmd_arg1
 	rjmp	.finish_command
 
 .cmd_noise_vol:
-	; set noise volume (+4 = 16)
+	; set noise volume (+5 = 17)
 	andi	cmd_arg1, 15
-	mov	noise_vol, cmd_arg1
+	sts	shadow_noise_vol, cmd_arg1
 	rjmp	.finish_command
 
 .cmd_noise_reload:
-	; set noise reload (+3 = 15)
-	mov	noise_reload, cmd_arg1
+	; set noise reload (+4 = 16)
+	sts	shadow_noise_reload, cmd_arg1
 	rjmp	.finish_command
 
 .cmd_sample_1:
 	; store 1 sample (+5 = 17)
 	mov	xl, cmd_arg1
-	st	x+, cmd_arg2
+	st	x, cmd_arg2
 	rjmp	.finish_command
 
 .cmd_sample_2:
@@ -157,6 +156,11 @@ cmd_process:
 	st	x, cmd_arg3
 	rjmp	.finish_command
 
+.cmd_channel_enable:
+	; set enabled channels (+4 = 16)
+	sts	shadow_enable, cmd_arg1
+	rjmp	.finish_command
+
 	;---------------------------------------------------------
 .channel_cmds: ; (+3 = 5)
 	; separate channel number (in upper nybble) from command (lower nybble) (+3 = 8)
@@ -164,87 +168,88 @@ cmd_process:
 	andi	temp, 0x70
 	andi	cmd_op, 0xF
 
-	; compute channel base address (+2 = 10)
-	ldi	yl, RAM_START
-	add	yl, temp
+	; compute channel base addresses (+10 = 18)
+	swap	temp     ; temp = ch
+	lsl	temp     ; temp = 2ch
+	mov	yl, temp ; yl = 2ch
+	lsl	temp     ; temp = 4ch
+	mov	xl, temp ; xl = 4ch
+	add	yl, temp ; yl = 2ch + 4ch = 6ch
 
-	; let's dispatch (+8 = 18)
+	ldi	temp, lo8(shadow_channels)
+	add	yl, temp
+	ldi	temp, lo8(shadow_phases)
+	add	xl, temp
+
+	; let's dispatch (+8 = 26)
 	ldi	zh, pm_hi8(.channel_cmd_jumptable) ; z = channel_cmd_jumptable + 2*cmd_op
 	ldi	zl, pm_lo8(.channel_cmd_jumptable)
 	add	zl, cmd_op
 	adc	zl, ZERO
 	ijmp
 .channel_cmd_jumptable:
-	rjmp	.channel_flags
 	rjmp	.channel_rate
 	rjmp	.channel_phase
 	rjmp	.channel_rate_reset
 	rjmp	.channel_sample
 	rjmp	.channel_vol
 
-.channel_flags:
-	; set flags (+3 = 21)
-	st	y, cmd_arg1
-	rjmp	.finish_command
-
 .channel_rate:
-	; set rate (+11 = 29)
-	inc	yl
+	; set rate (+8 = 34)
 	st	y+, cmd_arg1
-	inc	yl
 	st	y+, cmd_arg2
-	inc	yl
 	st	y+, cmd_arg3
 	rjmp	.finish_command
 
 .channel_phase:
-	; set phase (+11 = 29)
-	subi	yl, -2 ; add 2
-	st	y+, cmd_arg1
-	inc	yl
-	st	y+, cmd_arg2
-	inc	yl
-	st	y+, cmd_arg3
+	; set phase (+11 = 37
+	ldi	temp, 1
+	st	x+, temp
+	st	x+, cmd_arg1
+	st	x+, cmd_arg2
+	st	x+, cmd_arg3
 	rjmp	.finish_command
 
 .channel_rate_reset:
-	; set rate and reset phase (+15 = 33)
-	inc	yl
+	; set rate and reset phase (+17 = 34)
 	st	y+, cmd_arg1
-	st	y+, ZERO
 	st	y+, cmd_arg2
-	st	y+, ZERO
 	st	y+, cmd_arg3
-	st	y+, ZERO
+	ldi	temp, 1
+	st	x+, temp
+	st	x+, ZERO
+	st	x+, ZERO
+	st	x+, ZERO
 	rjmp	.finish_command
 
 .channel_sample:
-	; set sample (+7 = 25)
-	subi	yl, -7 ;add 7
+	; set sample (+7 = 24)
+	subi	yl, -3 ;add 3
 	st	y+, cmd_arg2 ; len
 	st	y+, cmd_arg1 ; start
 	rjmp	.finish_command
 
 .channel_vol:
-	; set volume (+6 = 24)
-	subi	yl, -9; add 9
+	; set volume (+6 = 23)
+	subi	yl, -5; add 5
 	andi	cmd_arg1, 0xF
 	st	y, cmd_arg1
 	rjmp	.finish_command
 
 .finish_command:
-	; longest command was set rate and reset phase (33)
+	; longest command was set rate and reset phase (34)
 
-	; reset state machine and tell host we're accepting commands (+3 = 36)
+	; reset state machine and tell host we're accepting commands (+3 = 37)
 	ldi	cmd_state, CMD_STATE_WAIT_OP
 	sbi	cmd_ready
 
-	; restore zh and return (+6 = 42)
+	; restore zh and return (+6 = 43)
 	pop	zh
 	ret
 
 ; ----------------------------------------------------------------------------
 ; shadow data copying
+; we've got TONSA FLASH so whatever, let's unroll these loops!
 
 .global copy_shadow
 copy_shadow:
@@ -260,38 +265,35 @@ copy_shadow:
 	st	x+, temp
 .endr
 
-	; other vars (+8 = 202)
+	; other vars (+10 = 204)
 	lds	temp, shadow_enable
 	sts	channel_enable, temp
 	lds	noise_vol, shadow_noise_vol
 	lds	noise_reload, shadow_noise_reload
+	lds	mix_shift, shadow_mix_shift
 
-	; setup phase loop (+6 = 206)
-	lds	I, shadow_phase_update
-	sts	shadow_phase_update, ZERO
-	rjmp	2f
+.rept NUM_CHANNELS
+	; this channel need updating? (+3 = 3)
+	ld	temp, y
+	cp	temp, ZERO
+	brne	1f
 
-	; x and y are already pointing at the phases, so...
-
-	; this channel need updating?
-0:	lsr	I
-	brcs	1f
-
-	; nah, skip this channel ((+2+6=) +8)
+	; nah, skip (+1+6 = 10)
 	adiw	xl, 3
-	adiw	yl, 3
+	adiw	yl, 4
 	rjmp	2f
 
-1:	; copy this channel ((+3+12) = +15)
-.rept 3
+1:	; yeah, copy (+2+14 = 19)
+	st	y+, ZERO
 	ld	temp, y+
 	st	x+, temp
+	ld	temp, y+
+	st	x+, temp
+	ld	temp, y+
+	st	x+, temp
+2:
 .endr
-
-2:	cpse	I, ZERO ; no more channels to update? (if taken, +3 = 18)
-	rjmp	0b
-
 	SIM_SHADOW_END
 
-	; phase loop can take up to 144 cycles; return (+144+4 = 354)
+	; phase update can take up to 152 cycles; return (+152+4 = 360)
 	ret

@@ -6,36 +6,37 @@
 .global shadow_enable
 .global shadow_noise_vol
 .global shadow_noise_reload
-.global shadow_phase_update
+.global shadow_mix_shift
 .global shadow_channels
 .global shadow_phases
 .global sample_ram
 
-; 148 bytes used; 12 bytes left!
+; 157 bytes used; 3 bytes left!!!
 
 ; ----------------------------------------------------------------------------
 ; MAIN STATE (73)
 
 .data
-.org 0
 .type   channels, @object
 .size   channels, NUM_CHANNELS * SIZEOF_CHANNEL
-channels:
-	.zero NUM_CHANNELS * SIZEOF_CHANNEL
+channels: .zero NUM_CHANNELS * SIZEOF_CHANNEL
 
-phases:
-	.zero NUM_CHANNELS * 3
+.type	phases, @object
+.size	phases, NUM_CHANNELS * SIZEOF_PHASE
+phases: .zero NUM_CHANNELS * SIZEOF_PHASE
 
 channel_enable: .byte 0
 
 ; ------------------------------------------------------------------
-; SHADOW STATE (76)
+; SHADOW STATE (84)
 
-shadow_enable: .byte 0b11111111
-shadow_noise_vol: .byte 0
+shadow_enable:       .byte 0b10
+shadow_noise_vol:    .byte 0
 shadow_noise_reload: .byte 0
-shadow_phase_update: .byte 0b11111111
+shadow_mix_shift:    .byte 3
 
+.type	shadow_channels, @object
+.size	shadow_channels, NUM_CHANNELS * SIZEOF_CHANNEL
 shadow_channels:
 	; y vars (48)
 	;     rat0  rat1  rat2  len   start vol
@@ -48,17 +49,19 @@ shadow_channels:
 	.byte 0x00, 0x90, 0x00, 0x1F, 0x20, 0x0F
 	.byte 0x00, 0x20, 0x01, 0x1F, 0x20, 0x0F
 
+.type	shadow_phases, @object
+.size	shadow_phases, NUM_CHANNELS * (SIZEOF_PHASE + 1)
 shadow_phases:
-	; x vars (24)
-	;     phs0  phs1  phs2
-	.byte 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00
+	; x vars (32)
+	;     upd?  phs0  phs1  phs2
+	.byte 0x00, 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00, 0x00
 
 .org SAMPLE_RAM_START
 .type	sample_ram, @object
