@@ -44,6 +44,13 @@
 	#define SIM_UPDATE_START
 	#define SIM_UPDATE_END
 #endif
+#if 1
+	#define SIM_SHADOW_START sbi	SIM_OUTPUT, 1
+	#define SIM_SHADOW_END   cbi	SIM_OUTPUT, 1
+#else
+	#define SIM_SHADOW_START
+	#define SIM_SHADOW_END
+#endif
 
 ; ----------------------------------------------------------------------------
 ; Register defines

@@ -242,3 +242,56 @@ cmd_process:
 	; restore zh and return (+6 = 42)
 	pop	zh
 	ret
+
+; ----------------------------------------------------------------------------
+; shadow data copying
+
+.global copy_shadow
+copy_shadow:
+	SIM_SHADOW_START
+
+	; setup pointers (+2 = 2)
+	ldi	xl, lo8(channels)
+	ldi	yl, lo8(shadow_channels)
+
+	; unrolled loop (+192 = 194)
+.rept NUM_CHANNELS * SIZEOF_CHANNEL
+	ld	temp, y+
+	st	x+, temp
+.endr
+
+	; other vars (+8 = 202)
+	lds	temp, shadow_enable
+	sts	channel_enable, temp
+	lds	noise_vol, shadow_noise_vol
+	lds	noise_reload, shadow_noise_reload
+
+	; setup phase loop (+6 = 206)
+	lds	I, shadow_phase_update
+	sts	shadow_phase_update, ZERO
+	rjmp	2f
+
+	; x and y are already pointing at the phases, so...
+
+	; this channel need updating?
+0:	lsr	I
+	brcs	1f
+
+	; nah, skip this channel ((+2+6=) +8)
+	adiw	xl, 3
+	adiw	yl, 3
+	rjmp	2f
+
+1:	; copy this channel ((+3+12) = +15)
+.rept 3
+	ld	temp, y+
+	st	x+, temp
+.endr
+
+2:	cpse	I, ZERO ; no more channels to update? (if taken, +3 = 18)
+	rjmp	0b
+
+	SIM_SHADOW_END
+
+	; phase loop can take up to 144 cycles; return (+144+4 = 354)
+	ret
