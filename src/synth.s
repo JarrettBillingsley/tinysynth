@@ -104,8 +104,8 @@ main:
 	lds	enabled, channel_enable
 
 .update_loop:
-	; read flags (enabled) and skip to next channel if 0 (4 | 4)
-	ror	enabled
+	; skip to next channel if 0 (4 | 4)
+	lsr	enabled
 	brcs	.chan_enabled
 
 	; skip over the remaining bytes
