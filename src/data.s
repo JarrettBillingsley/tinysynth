@@ -9,9 +9,10 @@
 .global shadow_mix_shift
 .global shadow_channels
 .global shadow_phases
+.global shadow_phase_update
 .global sample_ram
 
-; 157 bytes used; 3 bytes left!!!
+; 150 bytes used; 10 bytes left
 
 ; ----------------------------------------------------------------------------
 ; MAIN STATE (73)
@@ -28,12 +29,13 @@ phases: .zero NUM_CHANNELS * SIZEOF_PHASE
 channel_enable: .byte 0
 
 ; ------------------------------------------------------------------
-; SHADOW STATE (84)
+; SHADOW STATE (77)
 
 shadow_enable:       .byte 0b10
 shadow_noise_vol:    .byte 0
 shadow_noise_reload: .byte 0
 shadow_mix_shift:    .byte 3
+shadow_phase_update: .byte 0
 
 .type	shadow_channels, @object
 .size	shadow_channels, NUM_CHANNELS * SIZEOF_CHANNEL
@@ -52,16 +54,16 @@ shadow_channels:
 .type	shadow_phases, @object
 .size	shadow_phases, NUM_CHANNELS * (SIZEOF_PHASE + 1)
 shadow_phases:
-	; x vars (32)
-	;     upd?  phs0  phs1  phs2
-	.byte 0x00, 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00, 0x00
-	.byte 0x00, 0x00, 0x00, 0x00
+	; x vars (24)
+	;     phs0  phs1  phs2
+	.byte 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00
+	.byte 0x00, 0x00, 0x00
 
 .org SAMPLE_RAM_START
 .type	sample_ram, @object
