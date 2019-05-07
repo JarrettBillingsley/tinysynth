@@ -90,16 +90,15 @@ cmd_setup:
 
 .global cmd_process
 cmd_process:
-	; using z for indirect jump in this function (+2 = 2)
+	; using z for indirect jump in this function
 	push	zh
 
-	; dispatch based on the top bits
+	; dispatch based on the top bit
 	sbrc	cmd_op, 7
-	rjmp	.channel_cmds    ; second from top bit set, must be channel command
-	; got here, (+2 = 4)
+	rjmp	.channel_cmds    ; top bit set, must be channel command
 
-	; must be a global command; let's dispatch (+8 = 12)
-	ldi	zh, pm_hi8(.global_cmd_jumptable) ; z = global_cmd_jumptable + 2*cmd_op
+	; must be a global command; let's dispatch
+	ldi	zh, pm_hi8(.global_cmd_jumptable)
 	ldi	zl, pm_lo8(.global_cmd_jumptable)
 	add	zl, cmd_op
 	adc	zl, ZERO
@@ -115,7 +114,7 @@ cmd_process:
 	rjmp	.cmd_channel_enable
 
 .cmd_silence:
-	; silence all channels (+9 = 21)
+	; silence all channels
 	sts	shadow_enable, ZERO
 	sts	shadow_noise_vol, ZERO
 	sts	channel_enable, ZERO
@@ -123,66 +122,68 @@ cmd_process:
 	rjmp	.finish_command
 
 .cmd_commit:
+	; commit changes made to shadow state into the real state
 	rcall	copy_shadow
 	rjmp	.finish_command
 
 .cmd_mix_shift:
-	; set mix shift (+5 = 17)
+	; set mix shift
 	andi	cmd_arg1, 3
 	sts	shadow_mix_shift, cmd_arg1
 	rjmp	.finish_command
 
 .cmd_noise_vol:
-	; set noise volume (+5 = 17)
+	; set noise volume
 	andi	cmd_arg1, 15
 	sts	shadow_noise_vol, cmd_arg1
 	rjmp	.finish_command
 
 .cmd_noise_reload:
-	; set noise reload (+4 = 16)
+	; set noise reload
 	sts	shadow_noise_reload, cmd_arg1
 	rjmp	.finish_command
 
 .cmd_sample_1:
-	; store 1 sample (+5 = 17)
+	; store 1 sample
 	mov	xl, cmd_arg1
 	st	x, cmd_arg2
 	rjmp	.finish_command
 
 .cmd_sample_2:
-	; store 2 samples (+7 = 19)
+	; store 2 samples
 	mov	xl, cmd_arg1
 	st	x+, cmd_arg2
 	st	x, cmd_arg3
 	rjmp	.finish_command
 
 .cmd_channel_enable:
-	; set enabled channels (+4 = 16)
+	; set enabled channels mask
 	sts	shadow_enable, cmd_arg1
 	rjmp	.finish_command
 
 	;---------------------------------------------------------
-.channel_cmds: ; (+3 = 5)
-	; separate channel number (in upper nybble) from command (lower nybble) (+3 = 8)
+.channel_cmds:
+	; separate channel number (in upper nybble) from command (lower nybble)
 	mov	temp, cmd_op
 	andi	temp, 0x70
 	andi	cmd_op, 0xF
 
-	; compute channel base addresses (+10 = 18)
+	; compute channel base addresses
 	swap	temp     ; temp = ch
+	mov	I, temp  ; stash channel number away in I
+	mov	xl, temp ; xl = ch
 	lsl	temp     ; temp = 2ch
+	add	xl, temp ; xl = ch + 2ch = 3ch
 	mov	yl, temp ; yl = 2ch
 	lsl	temp     ; temp = 4ch
-	mov	xl, temp ; xl = 4ch
 	add	yl, temp ; yl = 2ch + 4ch = 6ch
-
 	ldi	temp, lo8(shadow_channels)
 	add	yl, temp
 	ldi	temp, lo8(shadow_phases)
 	add	xl, temp
 
-	; let's dispatch (+8 = 26)
-	ldi	zh, pm_hi8(.channel_cmd_jumptable) ; z = channel_cmd_jumptable + 2*cmd_op
+	; let's dispatch
+	ldi	zh, pm_hi8(.channel_cmd_jumptable)
 	ldi	zl, pm_lo8(.channel_cmd_jumptable)
 	add	zl, cmd_op
 	adc	zl, ZERO
@@ -195,55 +196,65 @@ cmd_process:
 	rjmp	.channel_vol
 
 .channel_rate:
-	; set rate (+8 = 34)
+	; set rate
 	st	y+, cmd_arg1
 	st	y+, cmd_arg2
 	st	y+, cmd_arg3
 	rjmp	.finish_command
 
 .channel_phase:
-	; set phase (+11 = 37
-	ldi	temp, 1
-	st	x+, temp
+	; set phase
 	st	x+, cmd_arg1
 	st	x+, cmd_arg2
 	st	x+, cmd_arg3
-	rjmp	.finish_command
+	rjmp	.mark_phase_dirty
 
 .channel_rate_reset:
-	; set rate and reset phase (+17 = 34)
+	; set rate and reset phase
 	st	y+, cmd_arg1
 	st	y+, cmd_arg2
 	st	y+, cmd_arg3
+	st	x+, ZERO
+	st	x+, ZERO
+	st	x+, ZERO
+
+.mark_phase_dirty:
+	; this seems a little cycle-wasteful, but it doesn't matter --
+	; these commands are eclipsed by the commit command.
 	ldi	temp, 1
-	st	x+, temp
-	st	x+, ZERO
-	st	x+, ZERO
-	st	x+, ZERO
+	rjmp	1f
+0:	lsl	temp
+	dec	I
+1:	tst	I
+	brne	0b
+
+	; temp now contains 1 << channel num
+	lds	I, shadow_phase_update
+	or	I, temp
+	sts	shadow_phase_update, I
+
+	out	SIM_OUTPUT, ZERO
+	out	SIM_OUTPUT, I
 	rjmp	.finish_command
 
 .channel_sample:
-	; set sample (+7 = 24)
+	; set sample
 	subi	yl, -3 ;add 3
 	st	y+, cmd_arg2 ; len
 	st	y+, cmd_arg1 ; start
 	rjmp	.finish_command
 
 .channel_vol:
-	; set volume (+6 = 23)
+	; set volume
 	subi	yl, -5; add 5
 	andi	cmd_arg1, 0xF
 	st	y, cmd_arg1
 	rjmp	.finish_command
 
 .finish_command:
-	; longest command was set rate and reset phase (34)
-
-	; reset state machine and tell host we're accepting commands (+3 = 37)
+	; reset state machine and tell host we're accepting commands
 	ldi	cmd_state, CMD_STATE_WAIT_OP
 	sbi	cmd_ready
-
-	; restore zh and return (+6 = 43)
 	pop	zh
 	ret
 
@@ -272,19 +283,21 @@ copy_shadow:
 	lds	noise_reload, shadow_noise_reload
 	lds	mix_shift, shadow_mix_shift
 
-.rept NUM_CHANNELS
-	; this channel need updating? (+3 = 3)
-	ld	temp, y
-	cp	temp, ZERO
-	brne	1f
+	; phase updating time! (+4 = 208)
+	lds	I, shadow_phase_update
+	sts	shadow_phase_update, ZERO
 
-	; nah, skip (+1+6 = 10)
+.rept NUM_CHANNELS
+	; this channel need updating? (+2 = 2)
+	lsr	I
+	brcs	1f
+
+	; nah, skip (+6 = 8)
 	adiw	xl, 3
-	adiw	yl, 4
+	adiw	yl, 3
 	rjmp	2f
 
-1:	; yeah, copy (+2+14 = 19)
-	st	y+, ZERO
+1:	; yeah, copy (+1+12 = 15)
 	ld	temp, y+
 	st	x+, temp
 	ld	temp, y+
@@ -295,5 +308,5 @@ copy_shadow:
 .endr
 	SIM_SHADOW_END
 
-	; phase update can take up to 152 cycles; return (+152+4 = 360)
+	; phase update can take up to 120 cycles; return (208+120+4 = 332)
 	ret
