@@ -27,7 +27,7 @@ $(OBJ)synth.hex: $(OBJ)synth.elf
 	avr-size --format=avr --mcu=$(DEVICE) $(OBJ)synth.elf
 
 flash: all
-	avrdude -v -pattiny85 -carduino -P$$(/bin/ls /dev/cu.usbmodem*) -b19200 -Uflash:w:$(OBJ)synth.hex:i
+	avrdude -v -pattiny85 -carduino -P$$(/bin/ls /dev/cu.usbmodem*) -b115200 -Uflash:w:$(OBJ)synth.hex:i
 
 simulate: $(OBJ)synth.elf
 	$(SIMULATE) -i traces/phase_test.vcd -v -v -v -v -v -v $(OBJ)synth.elf
