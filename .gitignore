@@ -3,3 +3,4 @@ gtkwave_trace.vcd
 *.gtkw
 voltab.s
 .DS_Store
+*__pycache__*
