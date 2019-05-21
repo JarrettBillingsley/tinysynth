@@ -49,10 +49,10 @@ class ADSRDisplay(QWidget):
 		if self.sliders is None:
 			root = self._getRoot()
 			self.sliders = [
-				root.findChild(QWidget, "sliderAttack"),
-				root.findChild(QWidget, "sliderDecay"),
-				root.findChild(QWidget, "sliderSustain"),
-				root.findChild(QWidget, "sliderRelease"),
+				root.ui.sliderAttack,
+				root.ui.sliderDecay,
+				root.ui.sliderSustain,
+				root.ui.sliderRelease,
 			]
 
 		return tuple((s.value() - s.minimum()) / (s.maximum() - s.minimum()) for s in self.sliders)

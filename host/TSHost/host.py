@@ -13,7 +13,7 @@ class MainWindow(QMainWindow):
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
 
-		self.findChild(QWidget, 'widgetKeyboard').scene().setPianoHandler(self)
+		self.ui.widgetKeyboard.scene().setPianoHandler(self)
 
 		self.show()
 
