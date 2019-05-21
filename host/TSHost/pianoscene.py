@@ -199,7 +199,7 @@ class PianoScene(QGraphicsScene):
 
 	def keyOff(self, note):
 		if note in self.m_keys:
-			self.keyOff(self.m_keys[note].getNote())
+			self._keyOff(self.m_keys[note])
 		else:
 			self.triggerNoteOff(note, self.m_velocity)
 
@@ -237,12 +237,8 @@ class PianoScene(QGraphicsScene):
 				mouseEvent.accept()
 
 	def getNoteFromKey(self, key):
-		# TODO?
-		# if self.m_keybdMap is not None:
-		# 	KeyboardMap.ConstIterator it = self.m_keybdMap.constFind(key)
-		# 	if (it != self.m_keybdMap.constEnd()) and (it.key() == key):
-		# 		note = it.value()
-		# 		return note
+		if self.m_keybdMap is not None:
+			return self.m_keybdMap.get(key, -1)
 		return -1
 
 	def getPianoKey(self, key):

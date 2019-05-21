@@ -1,4 +1,6 @@
 
+import sys
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -27,26 +29,17 @@ class PianoKeybd(QGraphicsView):
 	# Q_PROPERTY( bool useFlats READ useFlats WRITE setUseFlats )
 	# Q_PROPERTY( int transpose READ getTranspose WRITE setTranspose )
 
-	def __init__(self, parent = None, baseOctave = None, numKeys = None, startKey = None):
+	def __init__(self, parent = None, baseOctave = CONST.DEFAULTBASEOCTAVE,
+			numKeys = CONST.DEFAULTNUMBEROFKEYS, startKey = CONST.DEFAULTSTARTINGKEY):
+
 		super().__init__(parent)
 		self.m_rotation = 0
 		self.m_scene = None
 		self.m_rawMap = None
+		self.m_defaultMap = {}
+		self.m_defaultRawMap = {}
 		self.initialize()
-
-		# TODO
-		self.m_defaultMap = None
-		self.m_defaultRawMap = None
-
-		if baseOctave is None: baseOctave = CONST.DEFAULTBASEOCTAVE
-		if numKeys is None:    numKeys = CONST.DEFAULTNUMBEROFKEYS
-		if startKey is None:   startKey = CONST.DEFAULTSTARTINGKEY
-
 		self.initScene(baseOctave, numKeys, startKey)
-
-	def __DTOR__(self):
-		self.m_scene.setRawKeyboardMode(False)
-		setRawKeyboardMap(None)
 
 	def setNumKeys(self, numKeys, startKey):
 		if numKeys != self.m_scene.numKeys() or startKey != self.m_scene.startKey():
@@ -121,164 +114,160 @@ class PianoKeybd(QGraphicsView):
 		self.fitInView(self.m_scene.sceneRect(), Qt.KeepAspectRatio)
 
 	def initDefaultMap(self):
-		return
 		# Default translated Keyboard Map
-		self.m_defaultMap.insert(Qt.Key_Z, 12)
-		self.m_defaultMap.insert(Qt.Key_S, 13)
-		self.m_defaultMap.insert(Qt.Key_X, 14)
-		self.m_defaultMap.insert(Qt.Key_D, 15)
-		self.m_defaultMap.insert(Qt.Key_C, 16)
-		self.m_defaultMap.insert(Qt.Key_V, 17)
-		self.m_defaultMap.insert(Qt.Key_G, 18)
-		self.m_defaultMap.insert(Qt.Key_B, 19)
-		self.m_defaultMap.insert(Qt.Key_H, 20)
-		self.m_defaultMap.insert(Qt.Key_N, 21)
-		self.m_defaultMap.insert(Qt.Key_J, 22)
-		self.m_defaultMap.insert(Qt.Key_M, 23)
-		self.m_defaultMap.insert(Qt.Key_Q, 24)
-		self.m_defaultMap.insert(Qt.Key_2, 25)
-		self.m_defaultMap.insert(Qt.Key_W, 26)
-		self.m_defaultMap.insert(Qt.Key_3, 27)
-		self.m_defaultMap.insert(Qt.Key_E, 28)
-		self.m_defaultMap.insert(Qt.Key_R, 29)
-		self.m_defaultMap.insert(Qt.Key_5, 30)
-		self.m_defaultMap.insert(Qt.Key_T, 31)
-		self.m_defaultMap.insert(Qt.Key_6, 32)
-		self.m_defaultMap.insert(Qt.Key_Y, 33)
-		self.m_defaultMap.insert(Qt.Key_7, 34)
-		self.m_defaultMap.insert(Qt.Key_U, 35)
-		self.m_defaultMap.insert(Qt.Key_I, 36)
-		self.m_defaultMap.insert(Qt.Key_9, 37)
-		self.m_defaultMap.insert(Qt.Key_O, 38)
-		self.m_defaultMap.insert(Qt.Key_0, 39)
-		self.m_defaultMap.insert(Qt.Key_P, 40)
+		self.m_defaultMap[Qt.Key_Z] = 12
+		self.m_defaultMap[Qt.Key_S] = 13
+		self.m_defaultMap[Qt.Key_X] = 14
+		self.m_defaultMap[Qt.Key_D] = 15
+		self.m_defaultMap[Qt.Key_C] = 16
+		self.m_defaultMap[Qt.Key_V] = 17
+		self.m_defaultMap[Qt.Key_G] = 18
+		self.m_defaultMap[Qt.Key_B] = 19
+		self.m_defaultMap[Qt.Key_H] = 20
+		self.m_defaultMap[Qt.Key_N] = 21
+		self.m_defaultMap[Qt.Key_J] = 22
+		self.m_defaultMap[Qt.Key_M] = 23
+		self.m_defaultMap[Qt.Key_Q] = 24
+		self.m_defaultMap[Qt.Key_2] = 25
+		self.m_defaultMap[Qt.Key_W] = 26
+		self.m_defaultMap[Qt.Key_3] = 27
+		self.m_defaultMap[Qt.Key_E] = 28
+		self.m_defaultMap[Qt.Key_R] = 29
+		self.m_defaultMap[Qt.Key_5] = 30
+		self.m_defaultMap[Qt.Key_T] = 31
+		self.m_defaultMap[Qt.Key_6] = 32
+		self.m_defaultMap[Qt.Key_Y] = 33
+		self.m_defaultMap[Qt.Key_7] = 34
+		self.m_defaultMap[Qt.Key_U] = 35
+		self.m_defaultMap[Qt.Key_I] = 36
+		self.m_defaultMap[Qt.Key_9] = 37
+		self.m_defaultMap[Qt.Key_O] = 38
+		self.m_defaultMap[Qt.Key_0] = 39
+		self.m_defaultMap[Qt.Key_P] = 40
 
 		# Default Raw Keyboard Map
-	#if defined(Q_OS_LINUX)
-		self.m_defaultRawMap.insert(94, 11)
-		self.m_defaultRawMap.insert(52, 12)
-		self.m_defaultRawMap.insert(39, 13)
-		self.m_defaultRawMap.insert(53, 14)
-		self.m_defaultRawMap.insert(40, 15)
-		self.m_defaultRawMap.insert(54, 16)
-		self.m_defaultRawMap.insert(55, 17)
-		self.m_defaultRawMap.insert(42, 18)
-		self.m_defaultRawMap.insert(56, 19)
-		self.m_defaultRawMap.insert(43, 20)
-		self.m_defaultRawMap.insert(57, 21)
-		self.m_defaultRawMap.insert(44, 22)
-		self.m_defaultRawMap.insert(58, 23)
-		self.m_defaultRawMap.insert(59, 24)
-		self.m_defaultRawMap.insert(46, 25)
-		self.m_defaultRawMap.insert(60, 26)
-		self.m_defaultRawMap.insert(47, 27)
-		self.m_defaultRawMap.insert(61, 28)
+		if sys.platform == 'win32' or sys.platform == 'cygwin':
+			self.m_defaultRawMap[86] = 11
+			self.m_defaultRawMap[44] = 12
+			self.m_defaultRawMap[31] = 13
+			self.m_defaultRawMap[45] = 14
+			self.m_defaultRawMap[32] = 15
+			self.m_defaultRawMap[46] = 16
+			self.m_defaultRawMap[47] = 17
+			self.m_defaultRawMap[34] = 18
+			self.m_defaultRawMap[48] = 19
+			self.m_defaultRawMap[35] = 20
+			self.m_defaultRawMap[49] = 21
+			self.m_defaultRawMap[36] = 22
+			self.m_defaultRawMap[50] = 23
+			self.m_defaultRawMap[51] = 24
+			self.m_defaultRawMap[38] = 25
+			self.m_defaultRawMap[52] = 26
+			self.m_defaultRawMap[39] = 27
+			self.m_defaultRawMap[53] = 28
 
-		self.m_defaultRawMap.insert(24, 29)
-		self.m_defaultRawMap.insert(11, 30)
-		self.m_defaultRawMap.insert(25, 31)
-		self.m_defaultRawMap.insert(12, 32)
-		self.m_defaultRawMap.insert(26, 33)
-		self.m_defaultRawMap.insert(13, 34)
-		self.m_defaultRawMap.insert(27, 35)
-		self.m_defaultRawMap.insert(28, 36)
-		self.m_defaultRawMap.insert(15, 37)
-		self.m_defaultRawMap.insert(29, 38)
-		self.m_defaultRawMap.insert(16, 39)
-		self.m_defaultRawMap.insert(30, 40)
-		self.m_defaultRawMap.insert(31, 41)
-		self.m_defaultRawMap.insert(18, 42)
-		self.m_defaultRawMap.insert(32, 43)
-		self.m_defaultRawMap.insert(19, 44)
-		self.m_defaultRawMap.insert(33, 45)
-		self.m_defaultRawMap.insert(20, 46)
-		self.m_defaultRawMap.insert(34, 47)
-		self.m_defaultRawMap.insert(35, 48)
-	#endif
+			self.m_defaultRawMap[16] = 29
+			self.m_defaultRawMap[3] = 30
+			self.m_defaultRawMap[17] = 31
+			self.m_defaultRawMap[4] = 32
+			self.m_defaultRawMap[18] = 33
+			self.m_defaultRawMap[5] = 34
+			self.m_defaultRawMap[19] = 35
+			self.m_defaultRawMap[20] = 36
+			self.m_defaultRawMap[7] = 37
+			self.m_defaultRawMap[21] = 38
+			self.m_defaultRawMap[8] = 39
+			self.m_defaultRawMap[22] = 40
+			self.m_defaultRawMap[23] = 41
+			self.m_defaultRawMap[10] = 42
+			self.m_defaultRawMap[24] = 43
+			self.m_defaultRawMap[11] = 44
+			self.m_defaultRawMap[25] = 45
+			self.m_defaultRawMap[12] = 46
+			self.m_defaultRawMap[26] = 47
+			self.m_defaultRawMap[27] = 48
+		elif sys.platform == 'darwin':
+			self.m_defaultRawMap[50] = 11
+			self.m_defaultRawMap[6] = 12
+			self.m_defaultRawMap[1] = 13
+			self.m_defaultRawMap[7] = 14
+			self.m_defaultRawMap[2] = 15
+			self.m_defaultRawMap[8] = 16
+			self.m_defaultRawMap[9] = 17
+			self.m_defaultRawMap[5] = 18
+			self.m_defaultRawMap[11] = 19
+			self.m_defaultRawMap[4] = 20
+			self.m_defaultRawMap[45] = 21
+			self.m_defaultRawMap[38] = 22
+			self.m_defaultRawMap[46] = 23
+			self.m_defaultRawMap[43] = 24
+			self.m_defaultRawMap[37] = 25
+			self.m_defaultRawMap[47] = 26
+			self.m_defaultRawMap[41] = 27
+			self.m_defaultRawMap[44] = 28
 
-	#if defined(Q_OS_WIN)
-		self.m_defaultRawMap.insert(86, 11)
-		self.m_defaultRawMap.insert(44, 12)
-		self.m_defaultRawMap.insert(31, 13)
-		self.m_defaultRawMap.insert(45, 14)
-		self.m_defaultRawMap.insert(32, 15)
-		self.m_defaultRawMap.insert(46, 16)
-		self.m_defaultRawMap.insert(47, 17)
-		self.m_defaultRawMap.insert(34, 18)
-		self.m_defaultRawMap.insert(48, 19)
-		self.m_defaultRawMap.insert(35, 20)
-		self.m_defaultRawMap.insert(49, 21)
-		self.m_defaultRawMap.insert(36, 22)
-		self.m_defaultRawMap.insert(50, 23)
-		self.m_defaultRawMap.insert(51, 24)
-		self.m_defaultRawMap.insert(38, 25)
-		self.m_defaultRawMap.insert(52, 26)
-		self.m_defaultRawMap.insert(39, 27)
-		self.m_defaultRawMap.insert(53, 28)
+			self.m_defaultRawMap[12] = 29
+			self.m_defaultRawMap[19] = 30
+			self.m_defaultRawMap[13] = 31
+			self.m_defaultRawMap[20] = 32
+			self.m_defaultRawMap[14] = 33
+			self.m_defaultRawMap[21] = 34
+			self.m_defaultRawMap[15] = 35
+			self.m_defaultRawMap[17] = 36
+			self.m_defaultRawMap[22] = 37
+			self.m_defaultRawMap[16] = 38
+			self.m_defaultRawMap[26] = 39
+			self.m_defaultRawMap[32] = 40
+			self.m_defaultRawMap[34] = 41
+			self.m_defaultRawMap[25] = 42
+			self.m_defaultRawMap[31] = 43
+			self.m_defaultRawMap[29] = 44
+			self.m_defaultRawMap[35] = 45
+			self.m_defaultRawMap[27] = 46
+			self.m_defaultRawMap[33] = 47
+			self.m_defaultRawMap[30] = 48
+		else:
+			# some linux/freebsd thing?
+			self.m_defaultRawMap[94] = 11
+			self.m_defaultRawMap[52] = 12
+			self.m_defaultRawMap[39] = 13
+			self.m_defaultRawMap[53] = 14
+			self.m_defaultRawMap[40] = 15
+			self.m_defaultRawMap[54] = 16
+			self.m_defaultRawMap[55] = 17
+			self.m_defaultRawMap[42] = 18
+			self.m_defaultRawMap[56] = 19
+			self.m_defaultRawMap[43] = 20
+			self.m_defaultRawMap[57] = 21
+			self.m_defaultRawMap[44] = 22
+			self.m_defaultRawMap[58] = 23
+			self.m_defaultRawMap[59] = 24
+			self.m_defaultRawMap[46] = 25
+			self.m_defaultRawMap[60] = 26
+			self.m_defaultRawMap[47] = 27
+			self.m_defaultRawMap[61] = 28
 
-		self.m_defaultRawMap.insert(16, 29)
-		self.m_defaultRawMap.insert(3, 30)
-		self.m_defaultRawMap.insert(17, 31)
-		self.m_defaultRawMap.insert(4, 32)
-		self.m_defaultRawMap.insert(18, 33)
-		self.m_defaultRawMap.insert(5, 34)
-		self.m_defaultRawMap.insert(19, 35)
-		self.m_defaultRawMap.insert(20, 36)
-		self.m_defaultRawMap.insert(7, 37)
-		self.m_defaultRawMap.insert(21, 38)
-		self.m_defaultRawMap.insert(8, 39)
-		self.m_defaultRawMap.insert(22, 40)
-		self.m_defaultRawMap.insert(23, 41)
-		self.m_defaultRawMap.insert(10, 42)
-		self.m_defaultRawMap.insert(24, 43)
-		self.m_defaultRawMap.insert(11, 44)
-		self.m_defaultRawMap.insert(25, 45)
-		self.m_defaultRawMap.insert(12, 46)
-		self.m_defaultRawMap.insert(26, 47)
-		self.m_defaultRawMap.insert(27, 48)
-	#endif
+			self.m_defaultRawMap[24] = 29
+			self.m_defaultRawMap[11] = 30
+			self.m_defaultRawMap[25] = 31
+			self.m_defaultRawMap[12] = 32
+			self.m_defaultRawMap[26] = 33
+			self.m_defaultRawMap[13] = 34
+			self.m_defaultRawMap[27] = 35
+			self.m_defaultRawMap[28] = 36
+			self.m_defaultRawMap[15] = 37
+			self.m_defaultRawMap[29] = 38
+			self.m_defaultRawMap[16] = 39
+			self.m_defaultRawMap[30] = 40
+			self.m_defaultRawMap[31] = 41
+			self.m_defaultRawMap[18] = 42
+			self.m_defaultRawMap[32] = 43
+			self.m_defaultRawMap[19] = 44
+			self.m_defaultRawMap[33] = 45
+			self.m_defaultRawMap[20] = 46
+			self.m_defaultRawMap[34] = 47
+			self.m_defaultRawMap[35] = 48
 
-	#if defined(Q_OS_MAC)
-		self.m_defaultRawMap.insert(50, 11)
-		self.m_defaultRawMap.insert(6, 12)
-		self.m_defaultRawMap.insert(1, 13)
-		self.m_defaultRawMap.insert(7, 14)
-		self.m_defaultRawMap.insert(2, 15)
-		self.m_defaultRawMap.insert(8, 16)
-		self.m_defaultRawMap.insert(9, 17)
-		self.m_defaultRawMap.insert(5, 18)
-		self.m_defaultRawMap.insert(11, 19)
-		self.m_defaultRawMap.insert(4, 20)
-		self.m_defaultRawMap.insert(45, 21)
-		self.m_defaultRawMap.insert(38, 22)
-		self.m_defaultRawMap.insert(46, 23)
-		self.m_defaultRawMap.insert(43, 24)
-		self.m_defaultRawMap.insert(37, 25)
-		self.m_defaultRawMap.insert(47, 26)
-		self.m_defaultRawMap.insert(41, 27)
-		self.m_defaultRawMap.insert(44, 28)
-
-		self.m_defaultRawMap.insert(12, 29)
-		self.m_defaultRawMap.insert(19, 30)
-		self.m_defaultRawMap.insert(13, 31)
-		self.m_defaultRawMap.insert(20, 32)
-		self.m_defaultRawMap.insert(14, 33)
-		self.m_defaultRawMap.insert(21, 34)
-		self.m_defaultRawMap.insert(15, 35)
-		self.m_defaultRawMap.insert(17, 36)
-		self.m_defaultRawMap.insert(22, 37)
-		self.m_defaultRawMap.insert(16, 38)
-		self.m_defaultRawMap.insert(26, 39)
-		self.m_defaultRawMap.insert(32, 40)
-		self.m_defaultRawMap.insert(34, 41)
-		self.m_defaultRawMap.insert(25, 42)
-		self.m_defaultRawMap.insert(31, 43)
-		self.m_defaultRawMap.insert(29, 44)
-		self.m_defaultRawMap.insert(35, 45)
-		self.m_defaultRawMap.insert(27, 46)
-		self.m_defaultRawMap.insert(33, 47)
-		self.m_defaultRawMap.insert(30, 48)
-	#endif
 		self.m_rawMap = self.m_defaultRawMap
 
 	#if defined(RAWKBD_SUPPORT)
