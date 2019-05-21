@@ -55,7 +55,7 @@ class PianoScene(QGraphicsScene):
 		self.m_minNote         = 0
 		self.m_maxNote         = 127
 		self.m_transpose       = 0
-		self.m_showLabels      = False
+		self.m_showLabels      = True
 		self.m_useFlats        = False
 		self.m_rawkbd          = False
 		self.m_keyboardEnabled = True
@@ -358,7 +358,7 @@ class PianoScene(QGraphicsScene):
 	def noteName(self, note):
 		num = (note + self.m_transpose + 12) % 12
 		adj =  2 if (note + self.m_transpose < 0) else 1
-		oct = self.m_baseOctave + ((note + self.m_transpose) / 12) - adj
+		oct = self.m_baseOctave + ((note + self.m_transpose) // 12) - adj
 
 		if not self.m_noteNames:
 			name = ""

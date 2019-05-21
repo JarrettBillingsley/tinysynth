@@ -16,6 +16,9 @@ class ADSRDisplay(QWidget):
 		pen.setWidth(2)
 		self.pen = pen
 
+	def setSliders(self, sliders):
+		self.sliders = sliders
+
 	def paintEvent(self, event):
 		Att, Dec, Sus, Rel = self._getSliderValues()
 
@@ -46,20 +49,4 @@ class ADSRDisplay(QWidget):
 		p.drawPolyline(QPolygon(points))
 
 	def _getSliderValues(self):
-		if self.sliders is None:
-			root = self._getRoot()
-			self.sliders = [
-				root.ui.sliderAttack,
-				root.ui.sliderDecay,
-				root.ui.sliderSustain,
-				root.ui.sliderRelease,
-			]
-
 		return tuple((s.value() - s.minimum()) / (s.maximum() - s.minimum()) for s in self.sliders)
-
-	def _getRoot(self):
-		root = self.parent()
-		while root.parent() is not None:
-			root = root.parent()
-
-		return root
